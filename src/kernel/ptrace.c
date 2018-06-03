@@ -15,6 +15,7 @@
 #include <linux/highmem.h>
 #include <linux/pagemap.h>
 #include <linux/ptrace.h>
+#include <linux/ptrace_remote.h>
 #include <linux/security.h>
 #include <linux/signal.h>
 #include <linux/uio.h>
@@ -867,6 +868,23 @@ static int ptrace_regset(struct task_struct *task, int req, unsigned int type,
 EXPORT_SYMBOL_GPL(task_user_regset_view);
 #endif
 
+static int ptrace_remote_munmap(struct task_struct *child, void __user *data) {
+	int retval = 0;
+	struct ptrace_remote_munmap args;
+	struct mm_struct *mm = child->mm;
+
+	if (copy_from_user(&args, data, sizeof(args)))
+		return -EFAULT;
+
+	if (down_write_killable(&mm->mmap_sem))
+		return -EINTR;
+
+	retval = do_munmap(mm, args.addr, args.length);
+	up_write(&mm->mmap_sem);
+
+	return retval;
+}
+
 int ptrace_request(struct task_struct *child, long request,
 		   unsigned long addr, unsigned long data)
 {
@@ -1077,6 +1095,10 @@ int ptrace_request(struct task_struct *child, long request,
 
 	case PTRACE_SECCOMP_GET_FILTER:
 		ret = seccomp_get_filter(child, addr, datavp);
+		break;
+
+	case PTRACE_REMOTE_MUNMAP:
+		ret = ptrace_remote_munmap(child, datavp);
 		break;
 
 	default:
