@@ -342,7 +342,7 @@ struct fault_env {
 /*
  * These are the virtual MM functions - opening of an area, closing and
  * unmapping it (needed to keep files on disk up-to-date etc), pointer
- * to the functions called when a no-page or a wp-page exception occurs. 
+ * to the functions called when a no-page or a wp-page exception occurs.
  */
 struct vm_operations_struct {
 	void (*open)(struct vm_area_struct * area);
@@ -2024,13 +2024,25 @@ extern int install_special_mapping(struct mm_struct *mm,
 				   unsigned long addr, unsigned long len,
 				   unsigned long flags, struct page **pages);
 
-extern unsigned long get_unmapped_area(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
+extern unsigned long get_unmapped_area(struct file *, unsigned long,
+	unsigned long,unsigned long, unsigned long);
+extern unsigned long get_task_unmapped_area(struct task_struct *ts, struct file *,
+	unsigned long, unsigned long, unsigned long, unsigned long);
 
 extern unsigned long mmap_region(struct file *file, unsigned long addr,
 	unsigned long len, vm_flags_t vm_flags, unsigned long pgoff);
+extern unsigned long mmap_task_region(struct task_struct *ts, struct file *file,
+	unsigned long addr, unsigned long len, vm_flags_t vm_flags, unsigned long pgoff);
 extern unsigned long do_mmap(struct file *file, unsigned long addr,
 	unsigned long len, unsigned long prot, unsigned long flags,
 	vm_flags_t vm_flags, unsigned long pgoff, unsigned long *populate);
+extern unsigned long do_task_mmap(struct task_struct *ts,
+	struct file *file, unsigned long addr, unsigned long len,
+	unsigned long prot, unsigned long flags, vm_flags_t vm_flags,
+	unsigned long pgoff, unsigned long *populate);
+extern unsigned long do_mmap_remote(struct task_struct *ts,
+	unsigned long addr, unsigned long len, unsigned long prot,
+	unsigned long flags, unsigned long fd, unsigned long offset);
 extern int do_munmap(struct mm_struct *, unsigned long, size_t);
 
 static inline unsigned long

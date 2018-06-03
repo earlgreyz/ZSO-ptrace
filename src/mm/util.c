@@ -324,6 +324,37 @@ unsigned long vm_mmap(struct file *file, unsigned long addr,
 }
 EXPORT_SYMBOL(vm_mmap);
 
+unsigned long vm_mmap_remote(struct task_struct *ts,
+	struct file *file, unsigned long addr,
+	unsigned long len, unsigned long prot,
+	unsigned long flag, unsigned long offset)
+{
+	unsigned long ret;
+	unsigned long populate;
+	unsigned long pgoff;
+	struct mm_struct *mm = ts->mm;
+
+	if (unlikely(offset + PAGE_ALIGN(len) < offset))
+		return -EINVAL;
+	if (unlikely(offset_in_page(offset)))
+		return -EINVAL;
+
+	pgoff = offset >> PAGE_SHIFT;
+
+	ret = security_mmap_file(file, prot, flag);
+	if (!ret) {
+		if (down_write_killable(&mm->mmap_sem))
+			return -EINTR;
+		ret = do_task_mmap(ts, file, addr, len, prot, flag, 0, pgoff,
+				&populate);
+		up_write(&mm->mmap_sem);
+		if (populate)
+			mm_populate(ret, populate);
+	}
+	return ret;
+}
+EXPORT_SYMBOL(vm_mmap_remote);
+
 void kvfree(const void *addr)
 {
 	if (is_vmalloc_addr(addr))

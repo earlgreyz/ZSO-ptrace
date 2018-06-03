@@ -868,7 +868,28 @@ static int ptrace_regset(struct task_struct *task, int req, unsigned int type,
 EXPORT_SYMBOL_GPL(task_user_regset_view);
 #endif
 
-static int ptrace_remote_munmap(struct task_struct *child, void __user *data) {
+static int ptrace_remote_mmap(struct task_struct *child,
+	 	struct ptrace_remote_mmap __user *data) {
+	struct ptrace_remote_mmap args;
+	unsigned long addr;
+
+	if (copy_from_user(&args, data, sizeof(args)))
+		return -EFAULT;
+
+	addr = do_mmap_remote(child, args.addr, args.length, args.prot,
+			args.flags, args.fd, args.offset);
+	if (IS_ERR_VALUE(addr))
+		return addr;
+
+	// Success - copy address to the arguments struct and return 0.
+	if (copy_to_user(&data->addr, &addr, sizeof(uint64_t)))
+		return -EFAULT;
+
+	return 0;
+}
+
+static int ptrace_remote_munmap(struct task_struct *child,
+		struct ptrace_remote_munmap __user *data) {
 	int retval = 0;
 	struct ptrace_remote_munmap args;
 	struct mm_struct *mm = child->mm;
@@ -1095,6 +1116,10 @@ int ptrace_request(struct task_struct *child, long request,
 
 	case PTRACE_SECCOMP_GET_FILTER:
 		ret = seccomp_get_filter(child, addr, datavp);
+		break;
+
+	case PTRACE_REMOTE_MMAP:
+		ret = ptrace_remote_mmap(child, datavp);
 		break;
 
 	case PTRACE_REMOTE_MUNMAP:
