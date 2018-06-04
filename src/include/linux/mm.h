@@ -1391,6 +1391,11 @@ static inline int stack_guard_page_end(struct vm_area_struct *vma,
 
 int vma_is_stack_for_current(struct vm_area_struct *vma);
 
+extern unsigned long mremap_task(struct task_struct *ts,
+    unsigned long addr, unsigned long old_len,
+    unsigned long new_len, unsigned long flags,
+    unsigned long new_addr);
+
 extern unsigned long move_page_tables(struct vm_area_struct *vma,
 		unsigned long old_addr, struct vm_area_struct *new_vma,
 		unsigned long new_addr, unsigned long len,
@@ -2054,8 +2059,16 @@ do_mmap_pgoff(struct file *file, unsigned long addr,
 }
 
 #ifdef CONFIG_MMU
+extern int __mm_populate_task(struct task_struct *ts, unsigned long addr,
+			 unsigned long len, int ignore_errors);
 extern int __mm_populate(unsigned long addr, unsigned long len,
 			 int ignore_errors);
+ static inline void mm_populate_task(struct task_struct *ts,
+	 	unsigned long addr, unsigned long len)
+ {
+ 	/* Ignore errors */
+ 	(void) __mm_populate_task(ts, addr, len, 1);
+ }
 static inline void mm_populate(unsigned long addr, unsigned long len)
 {
 	/* Ignore errors */
@@ -2063,6 +2076,8 @@ static inline void mm_populate(unsigned long addr, unsigned long len)
 }
 #else
 static inline void mm_populate(unsigned long addr, unsigned long len) {}
+static inline void mm_populate_task(struct task_struct *ts,
+	   unsigned long addr, unsigned long len) {}
 #endif
 
 /* These take the mm semaphore themselves */

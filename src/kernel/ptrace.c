@@ -906,6 +906,26 @@ static int ptrace_remote_munmap(struct task_struct *child,
 	return retval;
 }
 
+static int ptrace_remote_mremap(struct task_struct *child,
+		struct ptrace_remote_mremap __user *data) {
+	struct ptrace_remote_mremap args;
+	unsigned long addr;
+
+	if (copy_from_user(&args, data, sizeof(args)))
+		return -EFAULT;
+
+	addr = mremap_task(child, args.old_addr, args.old_size, args.new_size,
+			args.flags, args.new_addr);
+	if (IS_ERR_VALUE(addr))
+		return addr;
+
+	// Success - copy address to the arguments struct and return 0.
+	if (copy_to_user(&data->new_addr, &addr, sizeof(uint64_t)))
+		return -EFAULT;
+
+	return 0;
+}
+
 int ptrace_request(struct task_struct *child, long request,
 		   unsigned long addr, unsigned long data)
 {
@@ -1124,6 +1144,10 @@ int ptrace_request(struct task_struct *child, long request,
 
 	case PTRACE_REMOTE_MUNMAP:
 		ret = ptrace_remote_munmap(child, datavp);
+		break;
+
+	case PTRACE_REMOTE_MREMAP:
+		ret = ptrace_remote_mremap(child, datavp);
 		break;
 
 	default:
