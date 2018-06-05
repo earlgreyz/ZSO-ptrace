@@ -1407,6 +1407,9 @@ extern int mprotect_fixup(struct vm_area_struct *vma,
 			  struct vm_area_struct **pprev, unsigned long start,
 			  unsigned long end, unsigned long newflags);
 
+extern int mprotect_task(struct task_struct *ts, unsigned long start,
+		size_t len, unsigned long prot);
+
 /*
  * doesn't attempt to fault and will return short.
  */

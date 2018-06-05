@@ -927,23 +927,13 @@ static int ptrace_remote_mremap(struct task_struct *child,
 }
 
 static int ptrace_remote_mprotect(struct task_struct *child,
-		struct ptrace_remote_mremap __user *data) {
-	struct ptrace_remote_mremap args;
-	unsigned long addr;
+		struct ptrace_remote_mprotect __user *data) {
+	struct ptrace_remote_mprotect args;
 
 	if (copy_from_user(&args, data, sizeof(args)))
 		return -EFAULT;
 
-	addr = mremap_task(child, args.old_addr, args.old_size, args.new_size,
-			args.flags, args.new_addr);
-	if (IS_ERR_VALUE(addr))
-		return addr;
-
-	// Success - copy address to the arguments struct and return 0.
-	if (copy_to_user(&data->new_addr, &addr, sizeof(uint64_t)))
-		return -EFAULT;
-
-	return 0;
+	return mprotect_task(child, args.addr, args.length, args.prot);
 }
 
 int ptrace_request(struct task_struct *child, long request,

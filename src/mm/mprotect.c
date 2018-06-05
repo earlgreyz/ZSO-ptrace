@@ -354,17 +354,14 @@ fail:
 	return error;
 }
 
-/*
- * pkey==-1 when doing a legacy mprotect()
- */
-static int do_mprotect_pkey(unsigned long start, size_t len,
-		unsigned long prot, int pkey)
+static int do_mprotect_pkey_task(struct task_struct *ts, unsigned long start,
+        size_t len, unsigned long prot, int pkey)
 {
-	unsigned long nstart, end, tmp, reqprot;
+    unsigned long nstart, end, tmp, reqprot;
 	struct vm_area_struct *vma, *prev;
 	int error = -EINVAL;
 	const int grows = prot & (PROT_GROWSDOWN|PROT_GROWSUP);
-	const bool rier = (current->personality & READ_IMPLIES_EXEC) &&
+	const bool rier = (ts->personality & READ_IMPLIES_EXEC) &&
 				(prot & PROT_READ);
 
 	prot &= ~(PROT_GROWSDOWN|PROT_GROWSUP);
@@ -384,7 +381,7 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 
 	reqprot = prot;
 
-	if (down_write_killable(&current->mm->mmap_sem))
+	if (down_write_killable(&ts->mm->mmap_sem))
 		return -EINTR;
 
 	/*
@@ -392,10 +389,10 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 	 * them use it here.
 	 */
 	error = -EINVAL;
-	if ((pkey != -1) && !mm_pkey_is_allocated(current->mm, pkey))
+	if ((pkey != -1) && !mm_pkey_is_allocated(ts->mm, pkey))
 		goto out;
 
-	vma = find_vma(current->mm, start);
+	vma = find_vma(ts->mm, start);
 	error = -ENOMEM;
 	if (!vma)
 		goto out;
@@ -474,8 +471,23 @@ static int do_mprotect_pkey(unsigned long start, size_t len,
 		prot = reqprot;
 	}
 out:
-	up_write(&current->mm->mmap_sem);
+	up_write(&ts->mm->mmap_sem);
 	return error;
+}
+
+/*
+ * pkey==-1 when doing a legacy mprotect()
+ */
+static inline int do_mprotect_pkey(unsigned long start, size_t len,
+		unsigned long prot, int pkey)
+{
+	return do_mprotect_pkey_task(current, start, len, prot, pkey);
+}
+
+int mprotect_task(struct task_struct *ts, unsigned long start, size_t len,
+		unsigned long prot)
+{
+    return do_mprotect_pkey_task(ts, start, len, prot, -1);
 }
 
 SYSCALL_DEFINE3(mprotect, unsigned long, start, size_t, len,
