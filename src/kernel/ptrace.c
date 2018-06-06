@@ -16,6 +16,8 @@
 #include <linux/pagemap.h>
 #include <linux/ptrace.h>
 #include <linux/ptrace_remote.h>
+#include <linux/fdtable.h>
+#include <linux/file.h>
 #include <linux/security.h>
 #include <linux/signal.h>
 #include <linux/uio.h>
@@ -936,6 +938,26 @@ static int ptrace_remote_mprotect(struct task_struct *child,
 	return mprotect_task(child, args.addr, args.length, args.prot);
 }
 
+static int ptrace_dup_to_remote(struct task_struct *child,
+		struct ptrace_dup_to_remote __user *data) {
+	struct ptrace_dup_to_remote args;
+	int ret = -EBADF;
+	struct file *file;
+
+	if (copy_from_user(&args, data, sizeof(args)))
+		return -EFAULT;
+
+	file = fget_raw(args.local_fd);
+	if (file) {
+		ret = get_unused_fd_flags(args.flags);
+		if (ret >= 0)
+			__fd_install(child->files, ret, file);
+		else
+			fput(file);
+	}
+	return ret;
+}
+
 int ptrace_request(struct task_struct *child, long request,
 		   unsigned long addr, unsigned long data)
 {
@@ -1162,6 +1184,10 @@ int ptrace_request(struct task_struct *child, long request,
 
 	case PTRACE_REMOTE_MPROTECT:
 		ret = ptrace_remote_mprotect(child, datavp);
+		break;
+
+	case PTRACE_DUP_TO_REMOTE:
+		ret = ptrace_dup_to_remote(child, datavp);
 		break;
 
 	default:
