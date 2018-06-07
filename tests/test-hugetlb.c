@@ -37,10 +37,10 @@ int main() {
         .fd = -1,
         .offset = 0,
     };
-    
+
     child_pid = fork_and_call_child(child, (char*)0x31400000);
 
-    if (ptrace(PTRACE_REMOTE_MMAP, child_pid, NULL, &args) != 0x31400000) {
+    if (ptrace(PTRACE_REMOTE_MMAP, child_pid, NULL, &args) != 0) {
         perror("TRACER: remote mmap");
         return 1;
     }
