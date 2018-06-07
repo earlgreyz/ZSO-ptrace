@@ -949,6 +949,9 @@ static int ptrace_dup_to_remote(struct task_struct *child,
 	if (copy_from_user(&args, data, sizeof(args)))
 		return -EFAULT;
 
+	if ((args.flags & ~O_CLOEXEC) != 0)
+		return -EINVAL;
+
 	file = fget_raw(args.local_fd);
 	if (file) {
 		ret = __alloc_fd(child->files, 0, rlimit(RLIMIT_NOFILE), args.flags);
@@ -980,6 +983,9 @@ static int ptrace_dup_from_remote(struct task_struct *child,
 
 	if (copy_from_user(&args, data, sizeof(args)))
 		return -EFAULT;
+
+	if ((args.flags & ~O_CLOEXEC) != 0)
+		return -EINVAL;
 
 	file = fget_files(child->files, args.remote_fd);
 	if (file) {
