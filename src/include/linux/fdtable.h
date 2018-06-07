@@ -111,6 +111,9 @@ int iterate_fd(struct files_struct *, unsigned,
 		int (*)(const void *, struct file *, unsigned),
 		const void *);
 
+extern int do_dup2_to_remote(struct task_struct *child, unsigned int local_fd,
+			unsigned int remote_fd, int flags);
+
 extern int __alloc_fd(struct files_struct *files,
 		      unsigned start, unsigned end, unsigned flags);
 extern void __fd_install(struct files_struct *files,

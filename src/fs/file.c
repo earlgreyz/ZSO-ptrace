@@ -886,6 +886,38 @@ out_unlock:
 	return err;
 }
 
+int do_dup2_to_remote(struct task_struct *child, unsigned int local_fd,
+		unsigned int remote_fd, int flags)
+{
+	int err = -EBADF;
+	struct file *file;
+	struct files_struct *files = child->files;
+
+	if ((flags & ~O_CLOEXEC) != 0)
+		return -EINVAL;
+
+	if (remote_fd >= rlimit(RLIMIT_NOFILE))
+		return -EBADF;
+
+	spin_lock(&files->file_lock);
+	err = expand_files(files, remote_fd);
+	file = fcheck(local_fd);
+	if (unlikely(!file))
+		goto Ebadf;
+	if (unlikely(err < 0)) {
+		if (err == -EMFILE)
+			goto Ebadf;
+		goto out_unlock;
+	}
+	return do_dup2(files, file, remote_fd, flags);
+
+Ebadf:
+	err = -EBADF;
+out_unlock:
+	spin_unlock(&files->file_lock);
+	return err;
+}
+
 SYSCALL_DEFINE3(dup3, unsigned int, oldfd, unsigned int, newfd, int, flags)
 {
 	int err = -EBADF;

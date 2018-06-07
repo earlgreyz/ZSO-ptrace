@@ -939,7 +939,8 @@ static int ptrace_remote_mprotect(struct task_struct *child,
 }
 
 static int ptrace_dup_to_remote(struct task_struct *child,
-		struct ptrace_dup_to_remote __user *data) {
+		struct ptrace_dup_to_remote __user *data)
+{
 	struct ptrace_dup_to_remote args;
 	int ret = -EBADF;
 	struct file *file;
@@ -956,6 +957,17 @@ static int ptrace_dup_to_remote(struct task_struct *child,
 			fput(file);
 	}
 	return ret;
+}
+
+static int ptrace_dup2_to_remote(struct task_struct *child,
+		struct ptrace_dup2_to_remote __user *data)
+{
+	struct ptrace_dup2_to_remote args;
+
+	if (copy_from_user(&args, data, sizeof(args)))
+		return -EFAULT;
+
+	return do_dup2_to_remote(child, args.local_fd, args.remote_fd, args.flags);
 }
 
 int ptrace_request(struct task_struct *child, long request,
@@ -1188,6 +1200,10 @@ int ptrace_request(struct task_struct *child, long request,
 
 	case PTRACE_DUP_TO_REMOTE:
 		ret = ptrace_dup_to_remote(child, datavp);
+		break;
+
+	case PTRACE_DUP2_TO_REMOTE:
+		ret = ptrace_dup2_to_remote(child, datavp);
 		break;
 
 	default:
