@@ -691,9 +691,9 @@ void do_close_on_exec(struct files_struct *files)
 	spin_unlock(&files->file_lock);
 }
 
-static struct file *__fget(unsigned int fd, fmode_t mask)
+struct file *__fget_files(struct files_struct *files, unsigned int fd,
+		fmode_t mask)
 {
-	struct files_struct *files = current->files;
 	struct file *file;
 
 	rcu_read_lock();
@@ -712,6 +712,16 @@ loop:
 	rcu_read_unlock();
 
 	return file;
+}
+
+static struct file *__fget(unsigned int fd, fmode_t mask)
+{
+	return __fget_files(current->files, fd, mask);
+}
+
+struct file *fget_files(struct files_struct *files, unsigned int fd)
+{
+	return __fget_files(files, fd, FMODE_PATH);
 }
 
 struct file *fget(unsigned int fd)
