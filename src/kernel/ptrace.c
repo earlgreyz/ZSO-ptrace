@@ -992,6 +992,17 @@ static int ptrace_dup_from_remote(struct task_struct *child,
 	return ret;
 }
 
+static int ptrace_remote_close(struct task_struct *child,
+		struct ptrace_remote_close __user *data)
+{
+	struct ptrace_remote_close args;
+
+	if (copy_from_user(&args, data, sizeof(args)))
+		return -EFAULT;
+
+	return __close_fd(child->files, args.remote_fd);
+}
+
 int ptrace_request(struct task_struct *child, long request,
 		   unsigned long addr, unsigned long data)
 {
@@ -1230,6 +1241,10 @@ int ptrace_request(struct task_struct *child, long request,
 
 	case PTRACE_DUP_FROM_REMOTE:
 		ret = ptrace_dup_from_remote(child, datavp);
+		break;
+
+	case PTRACE_REMOTE_CLOSE:
+		ret = ptrace_remote_close(child, datavp);
 		break;
 
 	default:
