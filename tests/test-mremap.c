@@ -56,7 +56,7 @@ int main() {
     args.new_addr = 0x31337000;
     args.new_size = 0x2000;
     args.flags = MREMAP_FIXED | MREMAP_MAYMOVE;
-    if (ptrace(PTRACE_REMOTE_MREMAP, child_pid, NULL, &args) == -1) {
+    if (ptrace(PTRACE_REMOTE_MREMAP, child_pid, NULL, &args)) {
         perror("TRACER: remote mremap");
         return 1;
     }

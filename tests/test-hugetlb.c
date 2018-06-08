@@ -37,11 +37,15 @@ int main() {
         .fd = -1,
         .offset = 0,
     };
-
+    
     child_pid = fork_and_call_child(child, (char*)0x31400000);
 
-    if (ptrace(PTRACE_REMOTE_MMAP, child_pid, NULL, &args) != 0) {
+    if (ptrace(PTRACE_REMOTE_MMAP, child_pid, NULL, &args)) {
         perror("TRACER: remote mmap");
+        return 1;
+    }
+    if (args.addr != 0x31400000) {
+        fprintf(stderr, "Unexpected address returned (expected 0x31400000): %#lx\n", args.addr);
         return 1;
     }
 

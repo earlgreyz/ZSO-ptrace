@@ -49,12 +49,13 @@ int main() {
     }
     mmap_args.fd = fd;
     mmap_args.length = (stat_buf.st_size + 0xfff) & ~0xfff;
-    if ((remote_map=(void*)ptrace(
-                    PTRACE_REMOTE_MMAP, child_pid, NULL, &mmap_args)) != 0) {
+    if (ptrace(PTRACE_REMOTE_MMAP, child_pid, NULL, &mmap_args)) {
         perror("TRACER: remote map");
         return 1;
     }
-    if (ptrace(PTRACE_POKEUSER, child_pid, RIP * sizeof(unsigned long), mmap_args.addr) == -1) {
+    remote_map=(void*)mmap_args.addr;
+
+    if (ptrace(PTRACE_POKEUSER, child_pid, RIP * sizeof(unsigned long), remote_map) == -1) {
         perror("TRACER: ptrace pokeuser");
         return 1;
     }

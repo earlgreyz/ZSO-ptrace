@@ -70,7 +70,7 @@ int main() {
     args_mmap.offset = 0;
     if (ptrace(PTRACE_REMOTE_MMAP, child_pid, NULL, &args_mmap) != -1
             || errno != EINVAL)  {
-        fprintf(stderr, "TRACER: PTRACE_REMOTE_MMAP should EINVAL (missing MAP_PRIVATE)\n");
+        fprintf(stderr, "TRACER: PTRACE_REMOTE_MMAP should EINVAL (missing MAP_PRIVATE or MAP_SHARED)\n");
         return 1;
     }
 
