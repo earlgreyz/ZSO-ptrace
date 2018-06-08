@@ -2066,12 +2066,12 @@ extern int __mm_populate_task(struct task_struct *ts, unsigned long addr,
 			 unsigned long len, int ignore_errors);
 extern int __mm_populate(unsigned long addr, unsigned long len,
 			 int ignore_errors);
- static inline void mm_populate_task(struct task_struct *ts,
-	 	unsigned long addr, unsigned long len)
- {
- 	/* Ignore errors */
- 	(void) __mm_populate_task(ts, addr, len, 1);
- }
+static inline void mm_populate_task(struct task_struct *ts,
+		unsigned long addr, unsigned long len)
+{
+	/* Ignore errors */
+	(void) __mm_populate_task(ts, addr, len, 1);
+}
 static inline void mm_populate(unsigned long addr, unsigned long len)
 {
 	/* Ignore errors */

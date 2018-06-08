@@ -872,7 +872,7 @@ EXPORT_SYMBOL_GPL(task_user_regset_view);
 #endif
 
 static int ptrace_remote_mmap(struct task_struct *child,
-	 	struct ptrace_remote_mmap __user *data) {
+		struct ptrace_remote_mmap __user *data) {
 	struct ptrace_remote_mmap args;
 	unsigned long addr;
 
